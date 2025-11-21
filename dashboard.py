@@ -96,13 +96,24 @@ import io
 
 @st.cache_data
 def load_data():
-    # URL de descarga directa desde Google Drive
-    # Extraer el ID del documento: 1k_L9iafaaJm5eWJnqhy6961tiIzDEGab
-    drive_url = "https://drive.google.com/uc?id=1k_L9iafaaJm5eWJnqhy6961tiIzDEGab&export=download"
+    # URL de descarga directa desde Google Drive (archivo Excel compartido)
+    # ID del archivo: 1k_L9iafaaJm5eWJnqhy6961tiIzDEGab
+    file_id = "1k_L9iafaaJm5eWJnqhy6961tiIzDEGab"
+    drive_url = f"https://drive.google.com/uc?id={file_id}&export=download"
     
     try:
-        # Descargar el archivo
-        response = requests.get(drive_url)
+        # Descargar el archivo con sesión para manejar redirects
+        session = requests.Session()
+        response = session.get(drive_url, stream=True)
+        
+        # Si Google Drive redirige, seguir el redirect
+        if "drive.google.com" in response.url:
+            # Obtener el token de confirmación
+            for key, value in response.cookies.items():
+                if key.startswith('download_warning'):
+                    drive_url += f"&confirm={value}"
+            response = session.get(drive_url, stream=True)
+        
         response.raise_for_status()
         
         # Leer como Excel desde bytes
