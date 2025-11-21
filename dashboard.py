@@ -458,7 +458,7 @@ if analysis_mode == "📊 Por Departamento":
         
         df_display = df_dept.sort_values(by="Total", ascending=False).copy()
         st.dataframe(
-            df_display.style.background_gradient(subset=['Total'], cmap='YlGn').format({
+            df_display.style.format({
                 'Contributivo': "{:,.0f}",
                 'Subsidiado': "{:,.0f}",
                 'Excepción': "{:,.0f}",
