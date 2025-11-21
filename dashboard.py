@@ -90,36 +90,61 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- CARGA DE DATOS ---
-# Cargar datos por departamento
-df_dept = pd.read_excel('CIFRAS OCTUBRE-2025.xlsx', sheet_name='CoberturaDepartamento', header=1)
-df_dept = df_dept.dropna(subset=['Departamento'])
-df_dept = df_dept[df_dept['Departamento'] != 'Total general'].copy()
-df_dept = df_dept[['Departamento', 'Contributivo', 'Subsidiado', 'Excepción & Especiales', 'Afiliados']].copy()
-df_dept = df_dept.rename(columns={'Departamento': 'Región', 'Afiliados': 'Total', 'Excepción & Especiales': 'Excepción'})
-df_dept['Contributivo'] = pd.to_numeric(df_dept['Contributivo'], errors='coerce')
-df_dept['Subsidiado'] = pd.to_numeric(df_dept['Subsidiado'], errors='coerce')
-df_dept['Excepción'] = pd.to_numeric(df_dept['Excepción'], errors='coerce')
-df_dept['Total'] = pd.to_numeric(df_dept['Total'], errors='coerce')
-df_dept['% Contributivo'] = (df_dept['Contributivo'] / df_dept['Total'] * 100).round(2)
-df_dept['% Subsidiado'] = (df_dept['Subsidiado'] / df_dept['Total'] * 100).round(2)
-df_dept['% Excepción'] = (df_dept['Excepción'] / df_dept['Total'] * 100).round(2)
+# --- CARGA DE DATOS DESDE GOOGLE DRIVE ---
+import requests
+import io
 
-# Cargar datos de EPS
-df_eps = pd.read_excel('CIFRAS OCTUBRE-2025.xlsx', sheet_name='EPS', header=2)
-df_eps = df_eps.dropna(subset=['EPS'])
-df_eps = df_eps[df_eps['EPS'] != 'Total general'].copy()
-df_eps = df_eps[['EPS', 'TOTAL AFILIADOS', 'PORCENTAJE(%)', '% Contributivo', '% Subsidiado', '% Especiales/Excep']].copy()
-df_eps = df_eps.rename(columns={
-    'TOTAL AFILIADOS': 'Total Afiliados',
-    'PORCENTAJE(%)': 'Market Share (%)',
-    '% Contributivo': '% Contributivo',
-    '% Subsidiado': '% Subsidiado',
-    '% Especiales/Excep': '% Excepción'
-})
-for col in ['Total Afiliados', 'Market Share (%)', '% Contributivo', '% Subsidiado', '% Excepción']:
-    df_eps[col] = pd.to_numeric(df_eps[col], errors='coerce')
-df_eps = df_eps.dropna(subset=['Total Afiliados'])
+@st.cache_data
+def load_data():
+    # URL de descarga directa desde Google Drive
+    # Extraer el ID del documento: 1k_L9iafaaJm5eWJnqhy6961tiIzDEGab
+    drive_url = "https://drive.google.com/uc?id=1k_L9iafaaJm5eWJnqhy6961tiIzDEGab&export=download"
+    
+    try:
+        # Descargar el archivo
+        response = requests.get(drive_url)
+        response.raise_for_status()
+        
+        # Leer como Excel desde bytes
+        excel_file = io.BytesIO(response.content)
+        
+        # Cargar datos por departamento
+        df_dept = pd.read_excel(excel_file, sheet_name='CoberturaDepartamento', header=1)
+        df_dept = df_dept.dropna(subset=['Departamento'])
+        df_dept = df_dept[df_dept['Departamento'] != 'Total general'].copy()
+        df_dept = df_dept[['Departamento', 'Contributivo', 'Subsidiado', 'Excepción & Especiales', 'Afiliados']].copy()
+        df_dept = df_dept.rename(columns={'Departamento': 'Región', 'Afiliados': 'Total', 'Excepción & Especiales': 'Excepción'})
+        df_dept['Contributivo'] = pd.to_numeric(df_dept['Contributivo'], errors='coerce')
+        df_dept['Subsidiado'] = pd.to_numeric(df_dept['Subsidiado'], errors='coerce')
+        df_dept['Excepción'] = pd.to_numeric(df_dept['Excepción'], errors='coerce')
+        df_dept['Total'] = pd.to_numeric(df_dept['Total'], errors='coerce')
+        df_dept['% Contributivo'] = (df_dept['Contributivo'] / df_dept['Total'] * 100).round(2)
+        df_dept['% Subsidiado'] = (df_dept['Subsidiado'] / df_dept['Total'] * 100).round(2)
+        df_dept['% Excepción'] = (df_dept['Excepción'] / df_dept['Total'] * 100).round(2)
+        
+        # Cargar datos de EPS
+        df_eps = pd.read_excel(excel_file, sheet_name='EPS', header=2)
+        df_eps = df_eps.dropna(subset=['EPS'])
+        df_eps = df_eps[df_eps['EPS'] != 'Total general'].copy()
+        df_eps = df_eps[['EPS', 'TOTAL AFILIADOS', 'PORCENTAJE(%)', '% Contributivo', '% Subsidiado', '% Especiales/Excep']].copy()
+        df_eps = df_eps.rename(columns={
+            'TOTAL AFILIADOS': 'Total Afiliados',
+            'PORCENTAJE(%)': 'Market Share (%)',
+            '% Contributivo': '% Contributivo',
+            '% Subsidiado': '% Subsidiado',
+            '% Especiales/Excep': '% Excepción'
+        })
+        for col in ['Total Afiliados', 'Market Share (%)', '% Contributivo', '% Subsidiado', '% Excepción']:
+            df_eps[col] = pd.to_numeric(df_eps[col], errors='coerce')
+        df_eps = df_eps.dropna(subset=['Total Afiliados'])
+        
+        return df_dept, df_eps
+    except Exception as e:
+        st.error(f"Error al cargar datos: {e}")
+        return None, None
+
+# Cargar los datos
+df_dept, df_eps = load_data()
 
 # --- SIDEBAR MEJORADO ---
 st.sidebar.image("https://www.uniremington.edu.co/wp-content/uploads/2023/06/Logo-Uniremington-2023-H-C.png", width=200)
