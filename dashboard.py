@@ -641,7 +641,7 @@ elif analysis_mode == "🏥 Por EPS":
         
         df_eps_display = df_eps.sort_values(by="Total Afiliados", ascending=False).copy()
         st.dataframe(
-            df_eps_display.style.background_gradient(subset=['Total Afiliados'], cmap="Blues").format({
+            df_eps_display.style.format({
                 'Total Afiliados': "{:,.0f}",
                 'Market Share (%)': "{:.2f}",
                 '% Contributivo': "{:.1f}",
